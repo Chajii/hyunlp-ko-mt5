@@ -12,8 +12,7 @@ from transformers import set_seed
 
 
 def get_score(output, label):
-    score = stats.pearsonr(output, label)[0]
-    return score
+    return stats.pearsonr(output, label)[0]
 
 
 def train_model(epochs, device, train_dataloader, validation_dataloader, model, loss_fn, optimizer):
@@ -23,9 +22,9 @@ def train_model(epochs, device, train_dataloader, validation_dataloader, model, 
     best_val_score = 0
     best_model = None
 
-    for t in range(epochs):
+    for _ in range(epochs):
         model.train()
-        for i, batch in enumerate(tqdm(train_dataloader)):
+        for batch in tqdm(train_dataloader):
             batch = {k: v.to(device) for k, v in batch.items()}
 
             optimizer.zero_grad()
@@ -40,7 +39,7 @@ def train_model(epochs, device, train_dataloader, validation_dataloader, model, 
             val_pred = []
             val_label = []
 
-            for _, val_batch in enumerate(validation_dataloader):
+            for val_batch in validation_dataloader:
                 val_batch = {k: v.to(device) for k, v in val_batch.items()}
                 predict = model(val_batch['input_ids'], val_batch['attention_mask'], val_batch['token_type_ids'])  # validate
                 loss = loss_fn(predict, val_batch['labels'])
@@ -77,12 +76,16 @@ def klue_sts(args, model, tokenizer):
     # Prepare tokenizer, dataloader, model, loss function, optimizer, etc --
 
     def encode_input(examples):
-        encoded = tokenizer(examples['sentence1'], examples['sentence2'], max_length=seq_max_length, truncation=True, padding='max_length')
-        return encoded
+        return tokenizer(
+            examples['sentence1'],
+            examples['sentence2'],
+            max_length=seq_max_length,
+            truncation=True,
+            padding='max_length',
+        )
 
     def format_output(examples):
-        changed = {'labels': examples['labels']['label']}
-        return changed
+        return {'labels': examples['labels']['label']}
 
     train_dataset = train_dataset.map(encode_input)
     train_dataset = train_dataset.map(format_output)
